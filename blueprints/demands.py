@@ -4,6 +4,8 @@ from flask import Blueprint, render_template, request, jsonify, flash, current_a
 from werkzeug.utils import secure_filename
 import MySQLdb.cursors
 from extensions import mysql
+import cloudinary # <-- 1. Importe a biblioteca
+import cloudinary.uploader # <-- 2. Importe o uploader
 
 demands_bp = Blueprint('demands', __name__)
 
@@ -95,21 +97,30 @@ def save_demand():
             flash('Demanda criada! Agora, defina sua prioridade.', 'info')
             redirect_url = url_for('demands.prioritize', new_demand_id=demand_id) # Redirect to prioritization
 
-        # Handle file uploads for both create and update
         if 'attachments' in request.files:
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'demands', str(demand_id))
-            os.makedirs(upload_path, exist_ok=True)
-            
-            for file in request.files.getlist('attachments'):
+            files_to_upload = request.files.getlist('attachments')
+            for file in files_to_upload:
                 if file and file.filename != '' and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    filepath = os.path.join(upload_path, filename)
-                    file.save(filepath)
                     
-                    relative_path = os.path.join('demands', str(demand_id), filename).replace('\\', '/')
+                    # 3. Faz o upload para o Cloudinary
+                    # resource_type="auto" detecta se é imagem, video, ou arquivo bruto (raw)
+                    upload_result = cloudinary.uploader.upload(
+                        file,
+                        folder=f"demands/{demand_id}", # Organiza em pastas no Cloudinary
+                        resource_type="auto",
+                        public_id=filename # Usa o nome do arquivo original como public_id
+                    )
+
+                    # 4. Salva a URL segura do Cloudinary no banco de dados
+                    # Nós salvamos a URL segura (https) em vez do caminho do arquivo local.
+                    # O 'filepath' agora se torna 'file_url'.
+                    # **Pode ser necessário alterar a coluna no banco de 'filepath' para 'file_url' (VARCHAR 255)**
+                    secure_url = upload_result['secure_url']
+                    
                     cur.execute(
                         "INSERT INTO attachments (demand_id, filename, filepath) VALUES (%s, %s, %s)",
-                        (demand_id, filename, relative_path)
+                        (demand_id, filename, secure_url) # Salva a URL
                     )
 
         conn.commit()
@@ -121,6 +132,7 @@ def save_demand():
         cur.close()
 
     return redirect(redirect_url)
+
 
 @demands_bp.route('/prioritize/<int:new_demand_id>')
 def prioritize(new_demand_id):
@@ -135,20 +147,16 @@ def prioritize(new_demand_id):
 @demands_bp.route('/attachment/<int:attachment_id>')
 def download_attachment(attachment_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT filename, filepath FROM attachments WHERE id = %s", (attachment_id,))
+    # A coluna 'filepath' agora contém a URL completa.
+    cur.execute("SELECT filepath FROM attachments WHERE id = %s", (attachment_id,))
     attachment = cur.fetchone()
     cur.close()
     
     if not attachment:
         return "Arquivo não encontrado", 404
         
-    return send_from_directory(
-        directory=current_app.config['UPLOAD_FOLDER'],
-        path=attachment['filepath'],
-        download_name=attachment['filename'],
-        as_attachment=True
-    )
-    
+    return redirect(attachment['filepath'])
+
 @demands_bp.route('/update_priorities', methods=['POST'])
 def update_priorities():
     data = request.get_json()
