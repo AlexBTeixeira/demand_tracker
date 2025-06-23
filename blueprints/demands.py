@@ -1,5 +1,6 @@
 # blueprints/demands.py
 import os
+import traceback
 from flask import Blueprint, render_template, request, jsonify, flash, current_app, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 import MySQLdb.cursors
@@ -64,6 +65,7 @@ def detail(demand_id):
 
 @demands_bp.route('/save', methods=['POST'])
 def save_demand():
+    print("Estou na rota save_demand")
     demand_id = request.form.get('demand_id')
     title = request.form.get('title')
     description = request.form.get('description')
@@ -75,10 +77,12 @@ def save_demand():
         return redirect(url_for('demands.dashboard'))
 
     conn = mysql.connection
-    cur = conn.cursor()
+    cur = conn.cursor(MySQLdb.cursors.DictCursor) 
 
     try:
+        print("Tentando salvar a demanda...")
         if demand_id and demand_id != '0': # Update existing demand
+            print(f"Atualizando demanda com ID: {demand_id}")
             cur.execute("""
                 UPDATE demands SET title=%s, description=%s, status=%s, estimated_hours=%s, updated_at=NOW()
                 WHERE id=%s
@@ -86,9 +90,10 @@ def save_demand():
             flash('Demanda atualizada com sucesso!', 'success')
             redirect_url = url_for('demands.detail', demand_id=demand_id)
         else: # Create new demand
-            cur.execute("SELECT COALESCE(MAX(priority), -1) FROM demands")
-            max_priority = cur.fetchone()[0]
-            
+            print("Criando uma nova demanda...")
+            cur.execute("SELECT COALESCE(MAX(priority), -1) AS max_p FROM demands")
+            result = cur.fetchone()
+            max_priority = result['max_p']
             cur.execute("""
                 INSERT INTO demands (title, description, status, estimated_hours, priority)
                 VALUES (%s, %s, %s, %s, %s)
@@ -126,6 +131,17 @@ def save_demand():
         conn.commit()
     except Exception as e:
         conn.rollback()
+
+                # ==========================================================
+        # == MODIFICAÇÃO PARA DEBUGGING - IMPRIMA O ERRO COMPLETO ==
+        # ==========================================================
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("!!!!!!!!!!!!!!  ERRO CAPTURADO EM SAVE_DEMAND !!!!!!!!!!!!!!")
+        print(f"TIPO DE ERRO: {type(e)}")
+        print(f"MENSAGEM: {e}")
+        traceback.print_exc() # Isso imprime o stack trace completo no terminal
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        
         flash(f'Erro ao salvar demanda: {e}', 'danger')
         redirect_url = url_for('demands.dashboard')
     finally:

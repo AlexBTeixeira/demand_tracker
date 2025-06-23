@@ -12,6 +12,9 @@ class Config:
     MYSQL_USER = os.environ.get('MYSQL_USER', 'upltb1hqgecsy3v1')
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'DEZgzvawJo6QEQ3zvklC')
     MYSQL_DB = os.environ.get('MYSQL_DB', 'bs9ttstmwbpyexuox7iu')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '257982993797372')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', 'mflOkv9g8GE5eea2N5Gh3e0kv9A')
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dccj3u9nq')
     MYSQL_CURSORCLASS = 'DictCursor' # Adicionado aqui para centralizar a configuração.
 
     # Configuração de Upload de Arquivos
