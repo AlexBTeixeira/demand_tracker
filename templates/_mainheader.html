@@ -3,7 +3,7 @@
     {# Breadcrumbs can be populated in each view if needed #}
   </nav>
   <div class="header-actions">
-    <span class="text-sm font-semibold mr-4">Olá, {{ current_user.name }}</span>
+    <span class="text-sm font-semibold mr-4">Olá, Usuario</span>
     <button class="theme-toggle" aria-label="Sair" onclick="window.location.href='{{ url_for('auth.logout') }}'">
       <i class="ph ph-sign-out"></i>
     </button>

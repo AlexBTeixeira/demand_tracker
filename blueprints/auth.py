@@ -21,7 +21,7 @@ def login():
 
         if user_data and password == user_data['password_hash']:
             user = User(user_data['id'], user_data['username'], user_data['name'], user_data['password_hash'])
-            login_user(user)
+            #login_user(user)
             flash('Login bem-sucedido!', 'success')
             return redirect(url_for('demands.dashboard'))
         else:
@@ -30,8 +30,8 @@ def login():
     return render_template('pages/login.html')
 
 @auth_bp.route('/logout')
-@login_required
+#@login_required
 def logout():
-    logout_user()
+    #logout_user()
     flash('Você foi desconectado.', 'info')
     return redirect(url_for('auth.login'))
