@@ -87,7 +87,6 @@ thinc==8.3.6
 tinycss2==1.4.0
 tinyhtml5==2.0.0
 tqdm==4.67.1
-TQSPythonInterface @ file:///C:/Users/alexb/OneDrive/Desktop/tqs_ai_assistant/TQSPythonInterface-2.1.3-py313-none-any.whl#sha256=b797619f24403dfd18985e5dedab7d814f0a0f50427716491e559782935b7c0c
 traits==7.0.2
 typer==0.16.0
 typing-inspection==0.4.1
